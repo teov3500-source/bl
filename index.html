@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tèo Vina: Dấu Chân Cát Bụi</title>
+<style>
+:root{--sand:#f3c77b;--orange:#ff9b42;--ink:#101115;--glass:rgba(13,15,19,.78)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17171a;color:#fff;font-family:Inter,Segoe UI,Arial,sans-serif}canvas{display:block}
+#game{position:fixed;inset:0}#hud{position:fixed;inset:0;pointer-events:none;display:none}
+.brand{position:absolute;top:22px;left:24px;text-shadow:0 3px 16px #0008;font-weight:900;letter-spacing:.09em;font-size:14px}.brand span{display:block;color:var(--sand);font-size:10px;letter-spacing:.24em;margin-top:5px}
+.panel{background:linear-gradient(135deg,rgba(20,20,22,.86),rgba(20,20,22,.53));border:1px solid #ffffff24;backdrop-filter:none;border-radius:14px;box-shadow:0 15px 45px #0003}
+#mission{position:absolute;top:22px;right:24px;width:245px;padding:15px 17px}.eyebrow{font-size:10px;letter-spacing:.2em;color:var(--sand);font-weight:800}.mission-title{font-size:15px;font-weight:800;margin:8px 0 6px}.small{font-size:12px;color:#e4ddd1;line-height:1.5}.progress{height:4px;background:#ffffff22;border-radius:9px;margin-top:12px;overflow:hidden}.progress>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sand),var(--orange));transition:width .25s}
+#bottom{position:absolute;bottom:22px;left:24px;display:flex;gap:10px;align-items:flex-end}.stat{padding:12px 15px;min-width:105px}.stat strong{font-size:20px;display:block}.stat label{font-size:9px;letter-spacing:.17em;color:#d2c9bc}
+#hint{position:absolute;bottom:35px;left:50%;transform:translateX(-50%);padding:10px 16px;border-radius:30px;background:#101115d9;border:1px solid #ffffff24;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .2s}#hint.show{opacity:1}
+#centerToast{position:absolute;top:28%;left:50%;transform:translate(-50%,-10px);opacity:0;text-align:center;font-size:14px;font-weight:800;letter-spacing:.08em;text-shadow:0 3px 16px #000;transition:all .3s}#centerToast.show{opacity:1;transform:translate(-50%,0)}
+#crosshair{position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:#fff9;box-shadow:0 0 10px #fff8}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(100deg,rgba(9,10,13,.8),rgba(10,10,12,.28)),linear-gradient(0deg,rgba(10,10,12,.65),transparent 60%);z-index:5}
+.menuContent{width:min(690px,calc(100vw - 36px));padding:24px 30px}.kicker{font-size:11px;letter-spacing:.34em;color:var(--sand);font-weight:900}.title{font-size:clamp(38px,7vw,76px);line-height:.96;letter-spacing:-.055em;font-weight:1000;margin:17px 0 18px;text-shadow:0 8px 35px #0008}.title em{font-style:normal;color:var(--sand)}.intro{max-width:490px;color:#e1d8cc;line-height:1.7;font-size:14px}.buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.btn{pointer-events:auto;cursor:pointer;border:1px solid #ffffff35;color:#fff;background:#ffffff0d;padding:14px 19px;border-radius:7px;font-weight:900;letter-spacing:.08em;font-size:11px;transition:transform .18s,background .18s,border .18s}.btn:hover{transform:translateY(-2px);background:#ffffff1a;border-color:#ffffff7a}.btn.primary{background:var(--sand);color:#21180d;border-color:var(--sand)}.btn.primary:hover{background:#ffdb9d}.footnote{margin-top:22px;color:#b9b0a4;font-size:11px;line-height:1.7}.key{display:inline-block;padding:3px 6px;background:#ffffff18;border:1px solid #ffffff2c;border-radius:4px;color:white;font-size:10px;margin:0 2px}
+#modal{display:none;position:fixed;inset:0;z-index:8;align-items:center;justify-content:center;background:#0009;backdrop-filter:blur(8px)}#modal .panel{width:min(430px,calc(100vw - 32px));padding:24px}.modalTitle{font-size:22px;font-weight:900;margin:0 0 14px}.settingsRow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0;font-size:13px;color:#e8dfd3}.settingsRow input{width:145px;accent-color:var(--orange)}#endScreen{display:none;position:fixed;inset:0;z-index:7;align-items:center;justify-content:center;background:linear-gradient(0deg,#08090de8,#08090d65);text-align:center;padding:20px}.endCard{max-width:540px}.endTitle{font-size:clamp(34px,6vw,64px);font-weight:1000;letter-spacing:-.05em;margin:15px 0;color:var(--sand)}.endText{line-height:1.8;color:#e4d9c9}
+@media(max-width:650px){#mission{top:70px;right:12px;width:190px;padding:12px}#bottom{left:12px;bottom:12px}.brand{left:12px;top:14px}.stat{min-width:80px;padding:10px}.stat strong{font-size:17px}.menuContent{padding:18px}.intro{font-size:13px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+  <div class="brand">TÈO VINA<span>DẤU CHÂN CÁT BỤI</span></div>
+  <div id="mission" class="panel">
+    <div class="eyebrow">NHIỆM VỤ HIỆN TẠI</div>
+    <div id="missionTitle" class="mission-title">Tìm 5 cổ vật cổ xưa</div>
+    <div id="missionDesc" class="small">Vượt qua hẻm núi và tìm đường đến cổng cổ.</div>
+    <div class="progress"><i id="progressBar"></i></div>
+  </div>
+  <div id="bottom">
+    <div class="stat panel"><strong id="relicCount">0 / 5</strong><label>CỔ VẬT</label></div>
+    <div class="stat panel"><strong id="checkpointLabel">ĐẦU ĐƯỜNG</strong><label>ĐIỂM HỒI SINH</label></div>
+  </div>
+  <div id="crosshair"></div><div id="hint"></div><div id="centerToast"></div>
+</div>
+<div id="startScreen" class="overlay">
+  <div class="menuContent">
+    <div class="kicker">MỘT CUỘC PHIÊU LƯU 3D</div>
+    <div class="title">TÈO VINA:<br><em>DẤU CHÂN</em><br>CÁT BỤI</div>
+    <div class="intro">Băng qua những hẻm núi cổ, vượt các bệ đá cheo leo và tìm lại những cổ vật bị chôn vùi dưới miền cát bất tận.</div>
+    <div class="buttons"><button id="startBtn" class="btn primary">▶ &nbsp; BẮT ĐẦU THÁM HIỂM</button><button id="howBtn" class="btn">CÁCH CHƠI</button><button id="settingsBtn" class="btn">CÀI ĐẶT</button></div>
+    <div class="footnote">WASD di chuyển · Chuột xoay camera · Space nhảy · Shift chạy nhanh · Esc tạm dừng<br>Đồ họa 3D sử dụng Three.js. Cần kết nối Internet để tải thư viện.</div>
+  </div>
+</div>
+<div id="modal"><div class="panel"><h2 id="modalTitle" class="modalTitle">Tạm dừng</h2><div id="modalBody"></div><div id="modalButtons" class="buttons"></div></div></div>
+<div id="endScreen"><div class="endCard"><div class="kicker">CHUYẾN THÁM HIỂM</div><div id="endTitle" class="endTitle">HOÀN TẤT</div><div id="endText" class="endText"></div><div class="buttons" style="justify-content:center"><button id="restartBtn" class="btn primary">CHƠI LẠI</button><button id="menuBtn" class="btn">VỀ MENU</button></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+const root=document.getElementById('game');
+const $=id=>document.getElementById(id);
+if(!window.THREE){root.innerHTML='<div style="padding:40px;color:white;font:16px Arial">Không tải được thư viện đồ họa 3D. Hãy kiểm tra kết nối Internet rồi tải lại trang.</div>';return;}
+const THREE=window.THREE;
+let scene,camera,renderer,clock,player,playerGroup,worldGroup;
+let started=false,paused=false,finished=false,raf=0,elapsed=0,runTime=0;
+let yaw=0,pitch=-0.15,mouseLocked=false;
+const keys={}, colliders=[], platforms=[], collectibles=[], checkpoints=[], particles=[];
+const state={relics:0,checkpoint:0,spawn:new THREE.Vector3(0,1.2,5),lastSafe:new THREE.Vector3(0,1.2,5),nearby:null};
+const SETTINGS={sensitivity:0.0022,quality:'low',shake:false};
+const mats={};
+function material(color,roughness=1,metalness=0,extra={}){return new THREE.MeshStandardMaterial({color,roughness,metalness,...extra});}
+function makeMat(){
+ mats.sand=material('#c69a58');mats.sandLight=material('#e0b46e');mats.rock=material('#716052');mats.rockLight=material('#9c8060');mats.darkRock=material('#3f3935');mats.wood=material('#694a32');mats.rope=material('#b29a70');mats.gold=material('#ffc85d',.28,.65,{emissive:'#9c510d',emissiveIntensity:.45});mats.crystal=material('#73d9d3',.25,.25,{emissive:'#087c84',emissiveIntensity:1.3});mats.cloth=material('#bd5830');mats.cloth2=material('#e1b46a');mats.skin=material('#a66c49');mats.boot=material('#342b26');mats.metal=material('#6f7776',.35,.75);mats.glow=material('#ffb14a',.35,.1,{emissive:'#ff7718',emissiveIntensity:2});
+}
+function mesh(geo,mat,parent=scene){const m=new THREE.Mesh(geo,mat);m.castShadow=false;m.receiveShadow=false;return parent.add(m),m;}
+function box(parent,x,y,z,w,h,d,mat,collide=false,rot=0){const o=mesh(new THREE.BoxGeometry(w,h,d),mat,parent);o.position.set(x,y,z);o.rotation.y=rot;if(collide)colliders.push({min:new THREE.Vector3(x-w/2,y-h/2,z-d/2),max:new THREE.Vector3(x+w/2,y+h/2,z+d/2)});return o;}
+function addPlatform(x,y,z,w,d,mat=mats.rockLight,h=.5){box(worldGroup,x,y-h/2,z,w,h,d,mat,true);platforms.push({x,z,y,w,d,top:y});}
+function addRock(x,y,z,sx,sy,sz,mat=mats.rock){const o=mesh(new THREE.DodecahedronGeometry(1,0),mat,worldGroup);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.rotation.set(Math.random()*.25,Math.random()*6,Math.random()*.2);return o;}
+function addColumn(x,z,h){const base=mesh(new THREE.CylinderGeometry(.42,.58,h,7,1),mats.rockLight,worldGroup);base.position.set(x,h/2,z);base.rotation.z=(Math.random()-.5)*.06;const cap=mesh(new THREE.BoxGeometry(1.15,.22,1.15),mats.rock,worldGroup);cap.position.set(x,h+.1,z);box(worldGroup,x,h/2,z,.8,h,.8,mats.rock,true);}
+function createWorld(){
+ scene=new THREE.Scene();scene.background=new THREE.Color('#e5a45d');scene.fog=new THREE.FogExp2('#d99b5c',.014);
+ camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,350);
+ renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',stencil:false,depth:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,0.75));renderer.setSize(Math.floor(innerWidth*0.85),Math.floor(innerHeight*0.85),false);renderer.shadowMap.enabled=false;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;root.innerHTML='';root.appendChild(renderer.domElement);
+ clock=new THREE.Clock();makeMat();worldGroup=new THREE.Group();scene.add(worldGroup);
+ const hemi=new THREE.HemisphereLight('#ffe1b0','#4c392a',2.0);scene.add(hemi);
+ const sun=new THREE.DirectionalLight('#ffd19a',3.5);sun.position.set(-35,55,30);sun.castShadow=false;scene.add(sun);
+ const fill=new THREE.DirectionalLight('#9dc7e0',.65);fill.position.set(30,15,-30);scene.add(fill);
+ // Ground and distant canyon silhouettes
+ const ground=mesh(new THREE.PlaneGeometry(220,260,1,1),mats.sand,worldGroup);ground.rotation.x=-Math.PI/2;ground.position.set(0,-.35,-65);ground.receiveShadow=true;
+ // gentle procedural dunes as meshes
+ for(let i=0;i<5;i++){let x=(Math.random()-.5)*150,z=-Math.random()*190-5,s=5+Math.random()*12;const dune=mesh(new THREE.SphereGeometry(1,8,5),Math.random()>.5?mats.sandLight:mats.sand,worldGroup);dune.scale.set(s*.9,1+Math.random()*2,s*1.4);dune.position.set(x,-.65,z);dune.rotation.y=Math.random()*3;}
+ for(let side of [-1,1])for(let i=0;i<6;i++){const z=10-i*8;const h=9+Math.random()*19;addRock(side*(13+Math.random()*7),h*.4,z,3+Math.random()*5,h,4+Math.random()*5,i%3?mats.rock:mats.darkRock);}
+ // main route, stepping stones and ledges
+ addPlatform(0,.15,5,8,8,mats.sandLight,.5);
+ addPlatform(0,.5,-3,5,4,mats.rockLight,.8);
+ addPlatform(-3,1.15,-8,3.4,3,mats.rockLight,.7);
+ addPlatform(1,1.8,-13,3,3,mats.rock,.8);
+ addPlatform(4,2.4,-18,3.3,3.5,mats.rockLight,.8);
+ addPlatform(4,2.4,-23,5,5,mats.sandLight,.5);
+ // canyon crossing
+ addPlatform(0,3.1,-29,3.2,3,mats.rockLight,.8);
+ addPlatform(-4,3.8,-34,3.2,3.2,mats.rock,.8);
+ addPlatform(-7,4.5,-39,3.5,3.5,mats.rockLight,.8);
+ addPlatform(-4,4.9,-44,4,3.5,mats.rockLight,.8);
+ // bridge
+ addPlatform(0,4.9,-49,3,8,mats.wood,.25);
+ for(let z=-46;z>=-53;z-=1.15){box(worldGroup,-1.55,5.7,z,.08,.08,1,mats.rope);box(worldGroup,1.55,5.7,z,.08,.08,1,mats.rope);}
+ box(worldGroup,-1.55,5.55,-49,.1,1,8,mats.rope);box(worldGroup,1.55,5.55,-49,.1,1,8,mats.rope);
+ for(let z=-46;z>=-53;z-=1.8){box(worldGroup,-1.55,5.9,z,.1,.8,.1,mats.wood);box(worldGroup,1.55,5.9,z,.1,.8,.1,mats.wood);}
+ addPlatform(0,5.1,-56,5,4,mats.rockLight,.6);
+ // ruins route
+ addPlatform(4,5.8,-61,3,3,mats.rockLight,.7);addPlatform(7,6.5,-66,3,3,mats.rock,.7);
+ addPlatform(4,7.2,-71,3.4,3.2,mats.rockLight,.7);addPlatform(0,7.7,-76,4,4,mats.rockLight,.7);
+ addPlatform(-4,8.2,-81,3.4,3,mats.rock,.7);addPlatform(-7,8.8,-86,4,4,mats.rockLight,.7);
+ addPlatform(-3,9.3,-91,4,4,mats.rockLight,.7);addPlatform(2,9.8,-96,4,4,mats.rockLight,.7);
+ addPlatform(6,10.4,-101,4,4,mats.rock,.7);addPlatform(8,10.9,-106,5,5,mats.sandLight,.6);
+ // final ascent
+ addPlatform(4,11.6,-112,3.5,3.5,mats.rockLight,.7);addPlatform(0,12.3,-117,3.5,3.5,mats.rock,.7);
+ addPlatform(-4,13,-122,3.5,3.5,mats.rockLight,.7);addPlatform(-6,13.8,-127,5,5,mats.sandLight,.6);
+ addPlatform(-1,14.4,-133,5,5,mats.rockLight,.6);addPlatform(5,15,-139,5,5,mats.sandLight,.6);
+ addPlatform(8,15.4,-145,8,8,mats.rockLight,.7);
+ // columns and ruins at selected route points
+ [[-9,-23,5],[9,-23,7],[-10,-57,8],[10,-58,10],[-10,-76,7],[11,-78,9],[-11,-104,10],[12,-110,11],[-10,-132,8],[12,-140,12]].forEach(v=>addColumn(v[0],v[1],v[2]));
+ // ruins walls, arches represented with pillars and lintels
+ for(let z of [-62,-73,-87,-103,-120]){for(let x of [-10,10]){box(worldGroup,x,4,z,1,8,1,mats.rock,true,Math.random()*.08);}box(worldGroup,0,8,z,20,.7,1,mats.rock);}
+ // decorative rocks near route
+ for(let i=0;i<8;i++){const z=5-Math.random()*155;const x=(Math.random()-.5)*28;if(Math.abs(x)>5)addRock(x,Math.random()*1.2-.1,z,.35+Math.random()*1.8,.4+Math.random()*2,.4+Math.random()*1.8,Math.random()>.55?mats.rock:mats.darkRock);}
+ // little dry plants
+ for(let i=0;i<2;i++){let x=(Math.random()-.5)*26,z=2-Math.random()*145;if(Math.abs(x)<5)continue;const stem=mesh(new THREE.CylinderGeometry(.07,.13,.8,5),mats.wood,worldGroup);stem.position.set(x,.25,z);for(let j=0;j<2;j++){const arm=mesh(new THREE.CylinderGeometry(.05,.08,.38,5),mats.wood,worldGroup);arm.position.set(x+(j?-.18:.18),.45,z);arm.rotation.z=j?-.6:.6;}}
+ // checkpoint flags and collectible objects
+ makeCollectible(-3,1.8,-8,'CỔ VẬT I');makeCollectible(4,3,-23,'CỔ VẬT II');makeCollectible(-7,5.1,-39,'CỔ VẬT III');makeCollectible(4,7.8,-71,'CỔ VẬT IV');makeCollectible(8,11.6,-106,'CỔ VẬT V');
+ makeCheckpoint(0,.7,5,'ĐẦU ĐƯỜNG');makeCheckpoint(0,5.7,-56,'HẺM NÚI');makeCheckpoint(-6,14.5,-127,'ĐỈNH CÁT');
+ // finish gate
+ const gateX=8,gateZ=-145,gateY=16;
+ box(worldGroup,gateX-3,gateY+2,gateZ,1,5,1,mats.rock,true);box(worldGroup,gateX+3,gateY+2,gateZ,1,5,1,mats.rock,true);box(worldGroup,gateX,gateY+4.5,gateZ,7,.8,1,mats.rock);
+ const portal=mesh(new THREE.TorusGeometry(1.65,.12,10,40),mats.glow,worldGroup);portal.position.set(gateX,gateY+2,gateZ);portal.rotation.y=Math.PI/2;
+ const portalLight=new THREE.PointLight('#ff9b42',3,18);portalLight.position.set(gateX,gateY+2,gateZ);scene.add(portalLight);
+ // distant mountain silhouettes
+ for(let i=0;i<2;i++){const x=(Math.random()-.5)*180,z=-160-Math.random()*70,h=18+Math.random()*35;const m=mesh(new THREE.ConeGeometry(8+Math.random()*12,h,5),i%2?mats.darkRock:mats.rock,worldGroup);m.position.set(x,h/2-2,z);}
+ createPlayer();// Particles disabled in ultra-light mode.
+}
+function makeCollectible(x,y,z,name){
+ const g=new THREE.Group();worldGroup.add(g);g.position.set(x,y,z);
+ const gem=mesh(new THREE.OctahedronGeometry(.48,1),mats.gold,g);gem.rotation.z=.2;
+ const ring=mesh(new THREE.TorusGeometry(.7,.035,8,24),mats.glow,g);ring.rotation.x=Math.PI/2;
+ const light=new THREE.PointLight('#ffb04e',1.4,7);light.position.set(0,.3,0);g.add(light);
+ collectibles.push({group:g,gem,ring,name,baseY:y,taken:false});
+}
+function makeCheckpoint(x,y,z,label){
+ const g=new THREE.Group();worldGroup.add(g);g.position.set(x,y,z);
+ const pole=mesh(new THREE.CylinderGeometry(.045,.07,2.7,7),mats.wood,g);pole.position.y=1.25;
+ const flag=mesh(new THREE.PlaneGeometry(.85,.48),mats.cloth,g);flag.position.set(.4,2.2,0);flag.rotation.y=.1;
+ const orb=mesh(new THREE.OctahedronGeometry(.22),mats.glow,g);orb.position.y=2.9;
+ const light=new THREE.PointLight('#ff983d',.7,5);light.position.y=2.6;g.add(light);
+ checkpoints.push({group:g,x,y,z,label,active:false});
+}
+function createPlayer(){
+ playerGroup=new THREE.Group();scene.add(playerGroup);
+ // stylized explorer assembled from carefully colored parts
+ const torso=mesh(new THREE.CapsuleGeometry(.34,.62,5,8),mats.cloth,playerGroup);torso.position.y=1.15;
+ const pack=mesh(new THREE.BoxGeometry(.42,.48,.23),mats.wood,playerGroup);pack.position.set(0,1.25,.29);
+ const head=mesh(new THREE.SphereGeometry(.25,14,12),mats.skin,playerGroup);head.position.y=1.85;
+ const hair=mesh(new THREE.SphereGeometry(.255,12,8,0,Math.PI*2,0,Math.PI*.55),mats.darkRock,playerGroup);hair.position.y=1.94;
+ const scarf=mesh(new THREE.TorusGeometry(.25,.09,6,12),mats.cloth2,playerGroup);scarf.position.y=1.58;scarf.rotation.x=Math.PI/2;
+ player={velocity:new THREE.Vector3(),onGround:false,run:0,parts:[]};
+ for(let side of [-1,1]){
+  const arm=new THREE.Group();arm.position.set(side*.39,1.4,0);playerGroup.add(arm);
+  const upper=mesh(new THREE.CapsuleGeometry(.105,.36,3,6),mats.cloth,arm);upper.position.y=-.22;upper.rotation.z=side*-.15;
+  const hand=mesh(new THREE.SphereGeometry(.105,8,6),mats.skin,arm);hand.position.y=-.48;
+  player.parts.push({obj:arm,type:'arm',side});
+  const leg=new THREE.Group();leg.position.set(side*.18,.78,0);playerGroup.add(leg);
+  const thigh=mesh(new THREE.CapsuleGeometry(.13,.38,3,6),mats.darkRock,leg);thigh.position.y=-.21;
+  const boot=mesh(new THREE.BoxGeometry(.24,.16,.38),mats.boot,leg);boot.position.set(0,-.43,-.07);
+  player.parts.push({obj:leg,type:'leg',side});
+ }
+ playerGroup.position.copy(state.spawn);
+}
+function createParticles(){
+ const geo=new THREE.BufferGeometry();const count=35;const pos=new Float32Array(count*3);
+ for(let i=0;i<count;i++){pos[i*3]=(Math.random()-.5)*48;pos[i*3+1]=Math.random()*15;pos[i*3+2]=Math.random()*-155+5;}
+ geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+ const mat=new THREE.PointsMaterial({color:'#f5d4a2',size:.09,transparent:true,opacity:.42,depthWrite:false});
+ const pts=new THREE.Points(geo,mat);scene.add(pts);particles.push({pts,geo,count});
+}
+function platformUnder(x,z){let best=null;for(const p of platforms){if(Math.abs(x-p.x)<=p.w/2+.22&&Math.abs(z-p.z)<=p.d/2+.22){if(!best||p.top>best.top)best=p;}}return best;}
+function blocked(pos){
+ const r=.32,h=1.65;
+ for(const c of colliders){if(pos.x+r>c.min.x&&pos.x-r<c.max.x&&pos.z+r>c.min.z&&pos.z-r<c.max.z&&pos.y<c.max.y&&pos.y+h>c.min.y){return c;}}
+ return null;
+}
+function toast(text){const el=$('centerToast');el.textContent=text;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),1700);}
+function updateHud(){ $('relicCount').textContent=state.relics+' / 5';$('progressBar').style.width=(state.relics/5*100)+'%';$('checkpointLabel').textContent=checkpoints[state.checkpoint]?.label||'ĐẦU ĐƯỜNG';if(state.relics>=5){$('missionTitle').textContent='Đến cổng đích';$('missionDesc').textContent='Đã có đủ cổ vật. Tiến lên đỉnh cát!';} }
+function respawn(){playerGroup.position.copy(state.lastSafe);player.velocity.set(0,0,0);toast('ĐÃ HỒI SINH TẠI CHECKPOINT');}
+function setCheckpoint(i){if(i>state.checkpoint){state.checkpoint=i;state.lastSafe.set(checkpoints[i].x,checkpoints[i].y+.8,checkpoints[i].z);checkpoints[i].active=true;checkpoints[i].group.children[2].material=mats.crystal;toast('CHECKPOINT ĐÃ KÍCH HOẠT');updateHud();}}
+function startGame(){
+ $('startScreen').style.display='none';$('hud').style.display='block';$('endScreen').style.display='none';$('modal').style.display='none';
+ if(!started){started=true;runTime=0;}paused=false;finished=false;
+ if(!raf){clock.start();loop();}
+}
+function lockMouse(){try{renderer.domElement.requestPointerLock?.();}catch(e){}}
+function pauseGame(){
+ if(!started||finished)return;paused=true;
+ if(document.pointerLockElement)document.exitPointerLock();
+ $('modalTitle').textContent='Tạm dừng';$('modalBody').innerHTML='<div class="small">Hành trình đang được tạm dừng. Nghỉ một chút rồi tiếp tục vượt hẻm núi nhé.</div>';
+ $('modalButtons').innerHTML='<button class="btn primary" id="resumeBtn">TIẾP TỤC</button><button class="btn" id="pauseRestart">CHƠI LẠI</button><button class="btn" id="pauseMenu">VỀ MENU</button>';
+ $('modal').style.display='flex';$('resumeBtn').onclick=()=>{$('modal').style.display='none';paused=false;clock.getDelta();};$('pauseRestart').onclick=restartGame;$('pauseMenu').onclick=returnMenu;
+}
+function openSettings(){
+ $('modalTitle').textContent='Cài đặt';$('modalBody').innerHTML='<div class="settingsRow"><label>Độ nhạy camera</label><input id="sens" type="range" min="0.001" max="0.005" step="0.0002" value="'+SETTINGS.sensitivity+'"></div><div class="settingsRow"><label>Chất lượng đồ họa</label><select id="quality" style="background:#252326;color:white;padding:8px;border-radius:5px;border:1px solid #555"><option value="low" selected>Siêu nhẹ — ưu tiên mượt</option><option value="medium">Trung bình</option><option value="high">Cao</option></select></div><div class="settingsRow"><label>Rung camera</label><input id="shake" type="checkbox" '+(SETTINGS.shake?'checked':'')+'></div><div class="small">Chế độ siêu nhẹ: giảm chi tiết nền, tắt bụi và bóng đổ để ưu tiên độ mượt.</div>';
+ $('modalButtons').innerHTML='<button class="btn primary" id="saveSettings">LƯU</button><button class="btn" id="closeSettings">ĐÓNG</button>';$('modal').style.display='flex';
+ $('saveSettings').onclick=()=>{SETTINGS.sensitivity=Number($('sens').value);SETTINGS.quality=$('quality').value;SETTINGS.shake=$('shake').checked;try{localStorage.setItem('teovina-settings',JSON.stringify(SETTINGS));}catch(e){}$('modal').style.display='none';if(!started)$('startScreen').style.display='flex';};
+ $('closeSettings').onclick=()=>{$('modal').style.display='none';if(!started)$('startScreen').style.display='flex';};
+}
+function returnMenu(){paused=false;started=false;finished=false;$('modal').style.display='none';$('hud').style.display='none';$('startScreen').style.display='flex';if(document.pointerLockElement)document.exitPointerLock();}
+function restartGame(){state.relics=0;state.checkpoint=0;state.spawn.set(0,1.2,5);state.lastSafe.copy(state.spawn);collectibles.forEach(c=>{c.taken=false;c.group.visible=true;});checkpoints.forEach((c,i)=>{c.active=i===0;c.group.children[2].material=i===0?mats.crystal:mats.glow;});playerGroup.position.copy(state.spawn);player.velocity.set(0,0,0);runTime=0;finished=false;paused=false;$('endScreen').style.display='none';$('modal').style.display='none';$('hud').style.display='block';updateHud();startGame();}
+function winGame(){finished=true;paused=true;if(document.pointerLockElement)document.exitPointerLock();$('endTitle').textContent='HOÀN TẤT';$('endText').innerHTML='Bạn đã vượt qua miền cát và tìm thấy cổng cổ.<br><br><b>'+state.relics+'/5 cổ vật</b> · Thời gian: <b>'+formatTime(runTime)+'</b><br>Đôi chân gan lì đã đưa bạn đến tận đỉnh cát.';$('endScreen').style.display='flex';}
+function formatTime(s){let m=Math.floor(s/60),ss=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');}
+let lastRender=0;function loop(now=0){raf=requestAnimationFrame(loop);if(now-lastRender<22)return;lastRender=now;const dt=Math.min(clock.getDelta(),.04);if(!paused&&started&&!finished){runTime+=dt;update(dt);}renderer.render(scene,camera);}
+function update(dt){
+ elapsed+=dt;
+ const pos=playerGroup.position;
+ const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+ const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+ const move=new THREE.Vector3();
+ if(keys.KeyW||keys.ArrowUp)move.add(forward);if(keys.KeyS||keys.ArrowDown)move.sub(forward);if(keys.KeyD||keys.ArrowRight)move.add(right);if(keys.KeyA||keys.ArrowLeft)move.sub(right);
+ const moving=move.lengthSq()>0;const sprint=keys.ShiftLeft||keys.ShiftRight;const speed=sprint?9.2:5.6;
+ if(moving){move.normalize();player.velocity.x+=(move.x*speed-player.velocity.x)*Math.min(1,dt*10);player.velocity.z+=(move.z*speed-player.velocity.z)*Math.min(1,dt*10);playerGroup.rotation.y=Math.atan2(-move.x,-move.z);}else{player.velocity.x*=Math.max(0,1-dt*7);player.velocity.z*=Math.max(0,1-dt*7);}
+ if(keys.Space&&player.onGround){player.velocity.y=sprint?9.1:8.2;player.onGround=false;keys.Space=false;toast('NHẢY!');}
+ player.velocity.y-=22*dt;
+ const old=pos.clone();pos.x+=player.velocity.x*dt;let hit=blocked(pos);if(hit){pos.x=old.x;player.velocity.x=0;}
+ pos.z+=player.velocity.z*dt;hit=blocked(pos);if(hit){pos.z=old.z;player.velocity.z=0;}
+ pos.y+=player.velocity.y*dt;
+ const p=platformUnder(pos.x,pos.z);
+ if(p&&player.velocity.y<=0&&pos.y<=p.top+.04&&old.y>=p.top-.35){pos.y=p.top;player.velocity.y=0;player.onGround=true;}else player.onGround=false;
+ if(pos.y< -8||Math.abs(pos.x)>45||pos.z< -175||pos.z>18)respawn();
+ // procedural limbs
+ player.run+=dt*(moving?(sprint?13:8):2);
+ for(const part of player.parts){if(part.type==='arm')part.obj.rotation.x=moving?Math.sin(player.run+(part.side>0?Math.PI:0))*.65:Math.sin(elapsed*1.3)*.035;else part.obj.rotation.x=moving?Math.sin(player.run+(part.side>0?Math.PI:0))*.72:0;}
+ // collectible interaction
+ let hint='';
+ for(const c of collectibles){if(c.taken)continue;c.group.rotation.y+=dt*.7;c.gem.position.y=Math.sin(elapsed*2+c.baseY)*.12;c.ring.rotation.z+=dt*.5;const dist=pos.distanceTo(c.group.position);if(dist<1.8){hint='Nhấn E để nhặt '+c.name;state.nearby=c;break;}}
+ if(!hint)state.nearby=null;
+ if(state.nearby&&keys.KeyE){const c=state.nearby;c.taken=true;c.group.visible=false;state.relics++;keys.KeyE=false;toast('ĐÃ THU THẬP '+c.name);updateHud();state.nearby=null;}
+ // checkpoints
+ checkpoints.forEach((c,i)=>{if(pos.distanceTo(new THREE.Vector3(c.x,c.y,c.z))<2.2)setCheckpoint(i);});
+ const cp=checkpoints[state.checkpoint];if(cp&&pos.distanceTo(new THREE.Vector3(cp.x,cp.y,cp.z))<2.3){state.lastSafe.set(cp.x,cp.y+.8,cp.z);}
+ // finish zone
+ if(pos.distanceTo(new THREE.Vector3(8,16,-145))<3){if(state.relics>=5)winGame();else toast('CẦN THU THẬP ĐỦ 5 CỔ VẬT');}
+ $('hint').textContent=hint;$('hint').classList.toggle('show',!!hint);
+ // camera follow
+ const target=new THREE.Vector3(pos.x,pos.y+1.15,pos.z);
+ const horizontal=7.8*Math.cos(pitch),camOffset=new THREE.Vector3(Math.sin(yaw)*horizontal,3.2-7.8*Math.sin(pitch),Math.cos(yaw)*horizontal);
+ const desired=target.clone().add(camOffset);camera.position.lerp(desired,1-Math.exp(-dt*10));camera.lookAt(target);
+ // subtle camera shake when sprinting
+ if(SETTINGS.shake&&sprint&&moving){camera.position.y+=Math.sin(elapsed*22)*.025;}
+ // animate particles drifting
+ // Giữ hạt bụi tĩnh để giảm công việc CPU mỗi khung hình.
+}
+function setupEvents(){
+ $('startBtn').onclick=()=>{startGame();lockMouse();};
+ $('howBtn').onclick=()=>{$('modalTitle').textContent='Cách chơi';$('modalBody').innerHTML='<div class="small" style="line-height:2"><b>WASD</b> — Di chuyển<br><b>Chuột</b> — Xoay camera<br><b>Space</b> — Nhảy qua khe vực<br><b>Giữ Shift</b> — Chạy nước rút để lấy đà<br><b>E</b> — Nhặt cổ vật khi đứng gần<br><b>Esc</b> — Tạm dừng<br><br>Thu thập 5 cổ vật, kích hoạt các cột cờ checkpoint và vượt qua tuyến parkour để đến cổng đích. Nếu rơi xuống vực, bạn sẽ hồi sinh tại điểm gần nhất.</div>';$('modalButtons').innerHTML='<button class="btn primary" id="closeHow">ĐÃ HIỂU</button>';$('modal').style.display='flex';$('closeHow').onclick=()=>{$('modal').style.display='none';};};
+ $('settingsBtn').onclick=openSettings;$('restartBtn').onclick=restartGame;$('menuBtn').onclick=returnMenu;
+ document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='Escape'&&started&&!paused&&!finished)pauseGame();});
+ document.addEventListener('keyup',e=>{keys[e.code]=false;});
+ document.addEventListener('mousemove',e=>{if(document.pointerLockElement===renderer.domElement&&started&&!paused){yaw-=e.movementX*SETTINGS.sensitivity;pitch-=e.movementY*SETTINGS.sensitivity;pitch=Math.max(-.65,Math.min(.45,pitch));}});
+ renderer.domElement.addEventListener('click',()=>{if(started&&!paused&&!finished&&!document.pointerLockElement)lockMouse();});
+ document.addEventListener('pointerlockchange',()=>{mouseLocked=document.pointerLockElement===renderer.domElement;});
+ addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,0.75));renderer.setSize(Math.floor(innerWidth*0.85),Math.floor(innerHeight*0.85),false);});
+}
+try{const saved=JSON.parse(localStorage.getItem('teovina-settings')||'null');if(saved){SETTINGS.sensitivity=saved.sensitivity??SETTINGS.sensitivity;SETTINGS.quality='low';SETTINGS.shake=false;}}catch(e){}
+createWorld();setupEvents();updateHud();
+camera.position.set(0,5,15);camera.lookAt(0,1,0);
+renderer.render(scene,camera);
+})();
+</script>
+</body>
+</html>
